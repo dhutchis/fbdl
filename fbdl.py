@@ -115,9 +115,12 @@ try:
     #w.writerows(out)
     json.dump(out,f)
     f.close()
+    sys.exit(0)
 except urllib2.HTTPError as e:
     print "Download failed:",e
     error_message = e.read()
     print error_message
+    sys.exit(1)
 except KeyboardInterrupt:
     print "Canceled!"
+    sys.exit(2)

@@ -16,6 +16,10 @@ while [ $cur -lt $end ]; do
     cp tmpAll.tmp tmp_$cur.tmp
     echo "-o $output_base$cur.json -e &since=$cur&until=$next $target" >> tmp_$cur.tmp
     python fbdl.py -i tmp_$cur.tmp 0 
+    if [ $? -ne 0 ]; then
+	rm tmp_$cur.tmp
+	break
+    fi
     rm tmp_$cur.tmp
     let cur=next+1
     #break  # Put a break here for testing one execution.

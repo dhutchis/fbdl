@@ -11,7 +11,7 @@ import time
 import csv
 import re
 import argparse
-
+import sys
 
 def loadPage(url):
     # delay
@@ -20,7 +20,10 @@ def loadPage(url):
     response = urllib2.urlopen(url)
     content = response.read()
     payload = ''
-    print "DOWNLOAD!"
+    #print "DOWNLOAD!"
+    #print('.'),
+    sys.stdout.write('.')
+    sys.stdout.flush()
     try:
         payload = json.loads(content)
         #with open('test.json','wb') as testf:
@@ -88,10 +91,21 @@ def parseJSON(payload):
 # get args
 parser = argparse.ArgumentParser()
 parser.add_argument('id', help='ID of Graph API resource')
-parser.add_argument('-o', '--out', default="fbdump.csv", help='Output file')
+parser.add_argument('-o', '--out', default="fbdump.json", help='Output file')
 parser.add_argument('-t', '--token', help='Authentication token')
 parser.add_argument('-e', '--extra', help='Extra arguments')
+parser.add_argument('-i', '--input', help='Read input arguments from file')
 args = parser.parse_args()
+#print "ARGS:"
+#print args
+if args.input != None:
+    with open(args.input,'r') as fin:
+        data = fin.read()
+        #print "DATA split:"
+        #print data.split()
+        args = parser.parse_args(args=data.split(),namespace=args)
+        #print "NEW ARGS:"
+        #print args
 
 try:
     out = parseJSON(loadPage("https://graph.facebook.com/%s/feed?fields=id,from,message,created_time,comments,likes&access_token=%s%s" % (args.id, args.token, args.extra)))

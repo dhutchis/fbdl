@@ -11,7 +11,7 @@ let duration=duration-1
 cur=$start
 echo "-t $myid " > tmpAll.tmp
 while [ $cur -lt $end ]; do
-    echo Starting timestamp: $cur
+    echo Starting timestamp: $cur = `date --date="@$cur"`
     let next=cur+duration
     cp tmpAll.tmp tmp_$cur.tmp
     echo "-o $output_base$cur.json -e &since=$cur&until=$next $target" >> tmp_$cur.tmp
@@ -26,3 +26,6 @@ while [ $cur -lt $end ]; do
 done
 rm tmpAll.tmp
 
+#date --date="23 December 2014 15:18:07" +%s
+#date --date="@1419365887"
+#date --date="Tue Dec 23 15:18:07 EST 2014" +%s

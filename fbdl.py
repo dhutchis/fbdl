@@ -37,7 +37,7 @@ def loadPage(url, since, until):
             url += "&until="+until
 
     # delay
-    time.sleep(0.11)
+    time.sleep(0.10)
 
     # download
     #print "URL: ",url
@@ -57,12 +57,12 @@ def loadPage(url, since, until):
         print "JSON decoding failed!"
     return payload
 
-def countLikes(payload, since, until):
+def countLikes(payload):
     count = 0
     if 'data' in payload:
         count = len(payload['data'])
     if 'paging' in payload and 'next' in payload['paging']:
-        count += countLikes(loadPage(payload['paging']['next'], since, until), since, until)
+        count += countLikes(loadPage(payload['paging']['next'], None, None))
     return count
 
 def parseJSON(payload, since, until):
@@ -93,9 +93,9 @@ def parseJSON(payload, since, until):
                 if 'like_count' in post:
                     subd['like_count'] = post['like_count']
                 elif 'likes' in post and 'data' in post['likes']:
-                    subd['like_count'] = countLikes(post['likes'], since, until)
+                    subd['like_count'] = countLikes(post['likes'])
                 if 'comments' in post:
-                    subd['comments'] = parseJSON(post['comments'], since, until)
+                    subd['comments'] = parseJSON(post['comments'], None, None)
                 #print "subd:"
                 #print subd
                 out.append(subd)

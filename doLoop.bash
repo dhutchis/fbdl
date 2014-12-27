@@ -26,3 +26,6 @@ while [ $cur -lt $end ]; do
 done
 rm tmpAll.tmp
 
+#date --date="23 December 2014 15:18:07" +%s
+#date --date="@1419365887"
+#date --date="Tue Dec 23 15:18:07 EST 2014" +%s

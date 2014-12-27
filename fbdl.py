@@ -12,11 +12,35 @@ import csv
 import re
 import argparse
 import sys
+import urlparse
 
-def loadPage(url):
+# until moves back on next page if there are more results
+# since disappears
+# until stays same if no more results
+
+def loadPage(url, since, until):
+    if until != None and since != None and (int(since) > int(until)):
+        return []
+
+    par = urlparse.urlparse(url)
+    parq = urlparse.parse_qs(par.query)
+    if not('since' in parq) and since != None:
+        url += "&since="+since
+    if until != None:
+        if 'until' in parq:
+            #print "parq[UNTIL]: ", parq['until'][0]
+            if int(parq['until'][0]) == int(until): # query stayed same
+                return []
+            else:
+                until = parq['until'][0]
+        else:
+            url += "&until="+until
+
     # delay
-    time.sleep(1)
+    time.sleep(0.11)
+
     # download
+    #print "URL: ",url
     response = urllib2.urlopen(url)
     content = response.read()
     payload = ''
@@ -33,15 +57,15 @@ def loadPage(url):
         print "JSON decoding failed!"
     return payload
 
-def countLikes(payload):
+def countLikes(payload, since, until):
     count = 0
     if 'data' in payload:
         count = len(payload['data'])
     if 'paging' in payload and 'next' in payload['paging']:
-        count += countLikes(loadPage(payload['paging']['next']))
+        count += countLikes(loadPage(payload['paging']['next'], since, until), since, until)
     return count
 
-def parseJSON(payload):
+def parseJSON(payload, since, until):
     if 'data' in payload:
         out = []
         for post in payload['data']:
@@ -69,9 +93,9 @@ def parseJSON(payload):
                 if 'like_count' in post:
                     subd['like_count'] = post['like_count']
                 elif 'likes' in post and 'data' in post['likes']:
-                    subd['like_count'] = countLikes(post['likes'])
+                    subd['like_count'] = countLikes(post['likes'], since, until)
                 if 'comments' in post:
-                    subd['comments'] = parseJSON(post['comments'])
+                    subd['comments'] = parseJSON(post['comments'], since, until)
                 #print "subd:"
                 #print subd
                 out.append(subd)
@@ -79,7 +103,8 @@ def parseJSON(payload):
         if 'paging' in payload and 'next' in payload['paging']:
             #print "PAGING:"
             #print payload['paging']
-            out2 = parseJSON(loadPage(payload['paging']['next']))
+            nextpage = payload['paging']['next']
+            out2 = parseJSON(loadPage(nextpage, since, until), since, until)
             return out + out2
         else:
             return out
@@ -95,6 +120,8 @@ parser.add_argument('-o', '--out', default="fbdump.json", help='Output file')
 parser.add_argument('-t', '--token', help='Authentication token')
 parser.add_argument('-e', '--extra', help='Extra arguments')
 parser.add_argument('-i', '--input', help='Read input arguments from file')
+parser.add_argument('-s', '--since', help='[Since] Begin timestamp')
+parser.add_argument('-u', '--until', help='[Until] End timestamp')
 args = parser.parse_args()
 #print "ARGS:"
 #print args
@@ -108,7 +135,8 @@ if args.input != None:
         #print args
 
 try:
-    out = parseJSON(loadPage("https://graph.facebook.com/%s/feed?fields=id,from,message,created_time,comments,likes&access_token=%s%s" % (args.id, args.token, args.extra)))
+    out = parseJSON(loadPage("https://graph.facebook.com/%s/feed?fields=id,from,message,created_time,comments,likes&access_token=%s%s" 
+                             % (args.id, args.token, args.extra if args.extra != None else ""), args.since, args.until), args.since, args.until)
     # write output to file
     f = open(args.out,'wb')
     #w = csv.DictWriter(f,['author','timestamp','message'])
